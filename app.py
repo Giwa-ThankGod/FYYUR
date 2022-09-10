@@ -13,13 +13,20 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
-from models import db, app, Artist, Venue, Shows 
+from models import db, Artist, Venue, Shows 
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
+app = Flask(__name__)
+moment = Moment(app)
+app.config.from_object('config')
+db.init_app(app)
+
+# TODO: connect to a local postgresql database
+migrate = Migrate(app, db)
+
 
 # TODO: implement any missing fields, as a database migration using Flask-Migrate
-db.create_all()
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
 #----------------------------------------------------------------------------#
