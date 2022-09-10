@@ -127,7 +127,23 @@ def show_venue(venue_id):
   
   # data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
   venue = Venue.query.get(venue_id)
-  return render_template('pages/show_venue.html', venue=venue)
+  past_shows = db.session.query(Shows).join(Venue).filter(Shows.venue_id==venue_id).\
+    filter(Shows.start_time<datetime.now()).all()
+  
+  # I don't know why Shows.venue is not working for my filtering, hopefully i can get a helping
+  # hand. 
+
+  # upcoming_shows = db.session.query(Shows).join(Venue).filter(venue_id==venue_id).\
+  #   filter(Shows.start_time>datetime.now()).all()
+
+  print(past_shows)
+  for i in past_shows:
+    print(i)
+    
+  #Output :
+  #[(1, 4, None), (3, 3, None), (5, 2, None)] ; not a database query.
+    
+  return render_template('pages/show_venue.html', venue=venue, past_shows=past_shows, upcoming_shows='')
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -451,7 +467,7 @@ def create_show_submission():
     venue = Venue.query.filter(Venue.id==request.form['venue_id']).one_or_none()
     artist = Artist.query.filter(Artist.id==request.form['artist_id']).one_or_none()
     venue.artists.append(artist)
-    
+    print(venue.shows)
     db.session.add(venue)
     db.session.commit()
 
