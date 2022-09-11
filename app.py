@@ -13,7 +13,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
-from models import db, Artist, Venue, Shows 
+from models import db, Artist, Venue, Show
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -24,7 +24,6 @@ db.init_app(app)
 
 # TODO: connect to a local postgresql database
 migrate = Migrate(app, db)
-
 
 # TODO: implement any missing fields, as a database migration using Flask-Migrate
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
@@ -127,23 +126,54 @@ def show_venue(venue_id):
   
   # data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
   venue = Venue.query.get(venue_id)
-  past_shows = db.session.query(Shows).join(Venue).filter(Shows.venue_id==venue_id).\
-    filter(Shows.start_time<datetime.now()).all()
-  
-  # I don't know why Shows.venue is not working for my filtering, hopefully i can get a helping
-  # hand. 
+  past_show = []
+  upcoming_show = []
 
-  # upcoming_shows = db.session.query(Shows).join(Venue).filter(venue_id==venue_id).\
-  #   filter(Shows.start_time>datetime.now()).all()
+  past_shows = db.session.query(Show).join(Venue).\
+    filter(Show.venue_id==venue_id).\
+      filter(Show.start_time<datetime.now()).all()
 
-  print(past_shows)
-  for i in past_shows:
-    print(i)
+  upcoming_shows = db.session.query(Show).join(Venue).\
+  filter(Show.venue_id==venue_id).filter(Show.start_time>datetime.now()).all()
+
+  for info in past_shows:
+    show = {
+      "artist_id": info.artist.id,
+      "artist_name": info.artist.name,
+      "artist_image_link": info.artist.image_link,
+      "start_time": str(info.start_time)
+    }
+    past_show.append(show)
+
+  for info in upcoming_shows:
+    show = {
+      "venue_id": info.venue.id,
+      "venue_name": info.venue.name,
+      "venue_image_link": info.venue.image_link,
+      "start_time": str(info.start_time)
+    }
+    upcoming_show.append(show)
+  # print(venue.genres)
+  data={
+    "id": venue.id,
+    "name": venue.name,
+    "genres": venue.genres.split(","),
+    "address": venue.address,
+    "city": venue.city,
+    "state": venue.state,
+    "phone": venue.phone,
+    "website": venue.website_link,
+    "facebook_link": venue.facebook_link,
+    "seeking_talent": venue.seeking_venue,
+    "seeking_description": venue.seeking_description,
+    "image_link": venue.image_link,
+    "past_shows": past_show,
+    "upcoming_shows": upcoming_show,
+    "past_shows_count": len(past_shows),
+    "upcoming_shows_count": len(upcoming_shows),
+  }
     
-  #Output :
-  #[(1, 4, None), (3, 3, None), (5, 2, None)] ; not a database query.
-    
-  return render_template('pages/show_venue.html', venue=venue, past_shows=past_shows, upcoming_shows='')
+  return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -239,38 +269,55 @@ def search_artists():
 def show_artist(artist_id):
   # shows the artist page with the given artist_id
   # TODO: replace with real artist data from the artist table, using artist_id
-  data1={
-    "id": 4,
-    "name": "Guns N Petals",
-    "genres": ["Rock n Roll"],
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "326-123-5000",
-    "website": "https://www.gunsnpetalsband.com",
-    "facebook_link": "https://www.facebook.com/GunsNPetals",
-    "seeking_venue": True,
-    "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-    "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-    "past_shows": [{
-      "venue_id": 1,
-      "venue_name": "The Musical Hop",
-      "venue_image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
-      "start_time": "2019-05-21T21:30:00.000Z"
-    }],
-    "upcoming_shows": [],
-    "past_shows_count": 1,
-    "upcoming_shows_count": 0,
-  }
   # data = list(filter(lambda d: d['id'] == artist_id, [data1, data2, data3]))[0]
   artist = Artist.query.get(artist_id)
+  past_show = []
+  upcoming_show = []
 
-  past_shows = db.session.query(Shows).join(Venue).\
-    filter(Shows.artist_id==artist_id).filter(Shows.start_time>datetime.now()).all()
+  past_shows = db.session.query(Show).join(Venue).\
+    filter(Show.artist_id==artist_id).\
+      filter(Show.start_time<datetime.now()).all()
 
-  # upcoming_shows = db.session.query(Shows).join(Venue).\
-  # filter(Shows.artist_id==artist_id).filter(Shows.start_time>datetime.now()).all()
+  upcoming_shows = db.session.query(Show).join(Venue).\
+  filter(Show.artist_id==artist_id).filter(Show.start_time>datetime.now()).all()
 
-  return render_template('pages/show_artist.html', artist=artist)
+  for info in past_shows:
+    show = {
+      "venue_id": info.venue.id,
+      "venue_name": info.venue.name,
+      "venue_image_link": info.venue.image_link,
+      "start_time": str(info.start_time)
+    }
+    past_show.append(show)
+
+  for info in upcoming_shows:
+    show = {
+      "venue_id": info.venue.id,
+      "venue_name": info.venue.name,
+      "venue_image_link": info.venue.image_link,
+      "start_time": str(info.start_time)
+    }
+    upcoming_show.append(show)
+
+  data={
+    "id": artist.id,
+    "name": artist.name,
+    "genres": artist.genres.split(","),
+    "city": artist.city,
+    "state": artist.state,
+    "phone": artist.phone,
+    "website": artist.website_link,
+    "facebook_link": artist.facebook_link,
+    "seeking_venue": artist.seeking_venue,
+    "seeking_description": artist.seeking_description,
+    "image_link": artist.image_link,
+    "past_shows": past_show,
+    "upcoming_shows": upcoming_show,
+    "past_shows_count": len(past_shows),
+    "upcoming_shows_count": len(upcoming_shows),
+  }
+
+  return render_template('pages/show_artist.html', artist=data)
 
 #  Update
 #  ----------------------------------------------------------------
@@ -343,6 +390,9 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
   # TODO: take values from the form submitted, and update existing
   # venue record with ID <venue_id> using the new attributes
+
+  # print(request.form.getlist('genres'))
+
   try:
     venue = Venue.query.get(venue_id)
     venue.name=request.form['name']
@@ -415,18 +465,15 @@ def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
   data = []
-  venues = Venue.query.join(Venue.artists).all()
-  for dataa in venues:
-    print(
-      '''venues: '{}, artists: {}
-      '''.format(dataa.name, dataa.artists[0].name))
+  shows = Show.query.all()
+  for dataa in shows:
     info = {
-        "venue_id": dataa.id,
-        "venue_name": dataa.name,
-        "artist_id": dataa.artists[0].id,
-        "artist_name": dataa.artists[0].name,
-        "artist_image_link": dataa.artists[0].image_link,
-        "start_time": '2019-06-15T23:00:00.000Z',
+        "venue_id": dataa.venue.id,
+        "venue_name": dataa.venue.name,
+        "artist_id": dataa.artist.id,
+        "artist_name": dataa.artist.name,
+        "artist_image_link": dataa.artist.image_link,
+        "start_time": str(dataa.start_time),
     }
     data.append(info)
 
@@ -464,11 +511,12 @@ def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
   try:
-    venue = Venue.query.filter(Venue.id==request.form['venue_id']).one_or_none()
-    artist = Artist.query.filter(Artist.id==request.form['artist_id']).one_or_none()
-    venue.artists.append(artist)
-    print(venue.shows)
-    db.session.add(venue)
+    show = Show(
+      artist_id=request.form['artist_id'],
+      venue_id=request.form['venue_id'],
+      start_time=request.form['start_time']
+    )
+    db.session.add(show)
     db.session.commit()
 
     # on successful db insert, flash success
